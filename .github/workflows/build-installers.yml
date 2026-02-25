@@ -1,9 +1,8 @@
-name: 'Release'
+name: 'Build Installers'
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
 
 env:
   NODE_VERSION: '18'
@@ -15,6 +14,13 @@ jobs:
       fail-fast: false
       matrix:
         platform: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - platform: macos-latest
+            targets: ['dmg', 'app']
+          - platform: ubuntu-latest
+            targets: ['deb', 'appimage', 'snap']
+          - platform: windows-latest
+            targets: ['msix', 'msi', 'nsis']
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -45,14 +51,14 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build the app
+      - name: Build installers
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Pocket Desktop ${{ github.ref_name }}'
-          releaseBody: 'See the assets to download and install this version.'
-          releaseDraft: true
+          releaseName: 'Pocket ${{ github.ref_name }}'
+          releaseBody: 'Download installers for Pocket Desktop version ${{ github.ref_name }}'
+          releaseDraft: false
           prerelease: false
-          args: --verbose
+          args: --target ${{ join(matrix.targets, ',') }}

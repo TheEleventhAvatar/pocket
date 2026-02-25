@@ -4,22 +4,28 @@
   "version": "0.1.0",
   "identifier": "rewant.pocket",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
-    "frontendDist": "../dist"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Pocket",
         "width": 1000,
-        "height": 700
+        "height": 700,
+        "resizable": true
       }
     ]
   },
   "bundle": {
     "active": true,
-    "targets": "all"
+    "targets": ["msi"],
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
   }
 }
