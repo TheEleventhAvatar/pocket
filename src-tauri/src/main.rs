@@ -32,6 +32,7 @@ fn main() {
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(app_state.clone())
         .invoke_handler(tauri::generate_handler![
             commands::add_transcript,

@@ -130,6 +130,37 @@ CREATE TABLE transcripts (
 - Modern, clean design
 - Responsive layout with sidebar
 
+## Deployment
+
+### GitHub Releases (Recommended)
+
+1. **Tag a new release:**
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+2. **Automatic builds** will create installers for:
+   - Windows (.msi)
+   - macOS (.dmg)
+   - Linux (.deb)
+
+3. **Download installers** from GitHub Releases
+
+### Auto-Updates
+
+The app includes Tauri Updater for automatic updates when new releases are published.
+
+### Local Build
+
+```bash
+# Build for your platform
+npm run tauri build
+
+# Find installers in:
+ls src-tauri/target/release/bundle/
+```
+
 ## License
 
 MIT License - see LICENSE file for details
