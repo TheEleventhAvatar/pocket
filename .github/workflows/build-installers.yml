@@ -13,14 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
         include:
           - platform: macos-latest
             targets: ['dmg', 'app']
           - platform: ubuntu-latest
-            targets: ['deb', 'appimage', 'snap']
+            targets: ['deb', 'appimage']
           - platform: windows-latest
-            targets: ['msix', 'msi', 'nsis']
+            targets: ['msi', 'nsis']
 
     runs-on: ${{ matrix.platform }}
     steps:
