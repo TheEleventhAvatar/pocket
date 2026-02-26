@@ -50,4 +50,4 @@ jobs:
           releaseBody: 'Download installers for Pocket Desktop version ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
-          args: --target ${{ join(matrix.targets, ' --target ') }}
+          args: --bundles msi,nsis
