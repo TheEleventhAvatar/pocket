@@ -18,7 +18,11 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            targets: ['msi', 'nsis']
+            args: '--bundles msi,nsis'
+          - platform: macos-latest
+            args: '--bundles dmg,app'
+          - platform: ubuntu-22.04
+            args: '--bundles deb,AppImage'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -40,6 +44,12 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Install frontend dependencies
         run: npm install
 
@@ -53,4 +63,4 @@ jobs:
           releaseBody: 'Download installers for Pocket Desktop version ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
-          args: --bundles msi,nsis
+          args: ${{ matrix.args }}
