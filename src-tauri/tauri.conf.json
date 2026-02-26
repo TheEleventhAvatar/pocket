@@ -23,9 +23,18 @@
   "bundle": {
     "active": true,
     "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/pocket.ico"
+    ],
     "windows": {
       "digestAlgorithm": "sha256",
       "timestampUrl": ""
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ5MEM0MjI4RjQ3NjM3RjYKUldSWFk5V2pJQk1QSWN6N2VnWVpQSlRZM2FJZ0lJc0FZd0FvRUFnQlVBMHZDSEJ3T2k4N2VnWVpQSlRZM2FJZ0lJc0FZd0FvRUFnQlVB"
     }
   }
 }
