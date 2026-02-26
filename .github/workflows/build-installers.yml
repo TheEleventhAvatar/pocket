@@ -4,6 +4,9 @@ on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: write
+
 env:
   NODE_VERSION: '18'
   RUST_VERSION: 'stable'
