@@ -24,8 +24,7 @@
     "active": true,
     "targets": ["msi", "nsis"],
     "icon": [
-      "icons/pocket.ico",
-      "icons/icon.ico"
+      "icons/pocket.png"
     ],
     "windows": {
       "digestAlgorithm": "sha256",
