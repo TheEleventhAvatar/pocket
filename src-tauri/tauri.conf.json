@@ -25,6 +25,7 @@
     "targets": ["msi", "nsis"],
     "icon": [
       "icons/icon.ico",
+      "icons/pocket_512.png",
       "icons/pocket_rgba.png"
     ],
     "windows": {
