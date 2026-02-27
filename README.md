@@ -1,9 +1,3 @@
-# Pocket Desktop
-
-A production-grade desktop companion app for Pocket - a tiny AI device that lives on your phone and turns everything you say and hear into clear notes, action items, and search. We combine custom hardware, AI, and software to build the best note-taking experience for people who talk and move fast.
-
-Built with Tauri 2.x, Rust, and React + TypeScript.
-
 ## Features
 
 - **Offline-first design**: Local SQLite database with phone app sync capabilities
@@ -14,20 +8,6 @@ Built with Tauri 2.x, Rust, and React + TypeScript.
 - **Sync management**: Manual sync, offline/online modes
 - **Clean architecture**: Modular Rust backend with separate concerns
 
-## Product Vision
-
-Pocket is a tiny AI device that:
-- Lives on your phone
-- Captures everything you say and hear
-- Transforms speech into clear notes and action items
-- Provides powerful search capabilities
-- Built for people who talk and move fast
-
-The desktop companion provides:
-- Larger screen for reviewing and organizing notes
-- Advanced editing capabilities
-- Backup and sync management
-- Desktop notifications for new captures
 
 ## Architecture
 
