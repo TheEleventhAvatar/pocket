@@ -51,7 +51,7 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libasound2-dev pkg-config
 
       - name: Build installers
         uses: tauri-apps/tauri-action@v0
@@ -59,8 +59,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Pocket ${{ github.ref_name }}'
-          releaseBody: 'Download installers for Pocket Desktop version ${{ github.ref_name }}'
+          releaseName: 'Anchor ${{ github.ref_name }}'
+          releaseBody: 'Download installers for Anchor Desktop version ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
           args: --bundles ${{ join(matrix.targets, ',') }}
