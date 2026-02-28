@@ -1,214 +1,215 @@
-# Anchor Desktop
+# Anchor - Hardware-Based Security Application
 
-A production-grade desktop companion app for Anchor - a tiny AI device that lives on your phone and turns everything you say and hear into clear notes, action items, and search. We combine custom hardware, AI, and software to build the best note-taking experience for people who talk and move fast.
+Anchor is a cross-platform desktop application that provides hardware-based authentication using SanDisk USB devices. The application automatically detects USB connection/disconnection events and provides secure database access only when an authorized USB device is connected.
 
-Built with Tauri 2.x, Rust, and React + TypeScript.
+## 🚀 Features
 
-## Features
+### 🔐 Hardware-Based Security
+- **USB Heartbeat**: Real-time detection of SanDisk USB devices (VID: 0x0781)
+- **Event-Driven Architecture**: Instant UI updates on USB connection/disconnection
+- **Session Wipe**: Immediate application lock when USB is removed
+- **Encrypted Database**: SQLite database only accessible when USB is connected
 
-- **Offline-first design**: Local SQLite database with phone app sync capabilities
-- **Real-time simulation**: Mock transcript generation every 10 seconds when Anchor is connected
-- **System tray integration**: Show/hide window, quit application
-- **Native notifications**: Desktop alerts for new transcripts from Anchor
-- **Anchor status monitoring**: Connection status, battery level, last seen
-- **Sync management**: Manual sync, offline/online modes
-- **Clean architecture**: Modular Rust backend with separate concerns
+### 🌐 Cross-Platform Support
+- **Windows**: WinUSB driver integration via Zadig
+- **macOS**: Native IOKit support (no special setup required)
+- **Linux**: udev rule generation for non-root USB access
 
-## Product Vision
+### 🛡️ Security Features
+- **Thread-Safe State**: Rust-based backend with Arc<Mutex<AppState>>
+- **No Persistent Credentials**: Authentication tied to physical USB device
+- **Immediate Lockout**: Session terminates instantly on USB removal
+- **Device-Only Access**: Database encryption tied to USB serial number
 
-Anchor is a tiny AI device that:
-- Lives on your phone
-- Captures everything you say and hear
-- Transforms speech into clear notes and action items
-- Provides powerful search capabilities
-- Built for people who talk and move fast
+## 📋 Requirements
 
-The desktop companion provides:
-- Larger screen for reviewing and organizing notes
-- Advanced editing capabilities
-- Backup and sync management
-- Desktop notifications for new captures
+### System Requirements
+- **Operating System**: Windows 10+, macOS 10.14+, or Linux (Ubuntu 18.04+)
+- **USB Port**: Available USB port for SanDisk device
+- **Permissions**: Administrative access for initial setup (Windows/Linux)
 
-## Architecture
+### Hardware Requirements
+- **SanDisk USB Device**: Any SanDisk USB storage device (Vendor ID: 0x0781)
+- **USB Cable**: Standard USB connection
 
-### Backend (Rust)
-- `db.rs`: SQLite database operations
-- `commands.rs`: Tauri commands and business logic
-- `main.rs`: Application setup and system tray
+## 🛠️ Installation
 
-### Frontend (React + TypeScript)
-- `types.ts`: TypeScript interfaces
-- `hooks/useTauriCommands.ts`: Tauri API wrapper
-- `components/`: React components
-  - `Sidebar.tsx`: Phone status and sync controls
-  - `TranscriptList.tsx`: Transcript listing
-  - `TranscriptDetail.tsx`: Transcript viewer
-  - `AddTranscriptForm.tsx`: Manual transcript creation
+### Windows Setup
+1. Download the latest release from [GitHub Releases](https://github.com/TheEleventhAvatar/Anchor/releases)
+2. Install the application
+3. Run Zadig as Administrator:
+   - Download [Zadig](https://github.com/pbatard/libwdi/releases) (zadig-2.9.exe)
+   - Click Options → List All Devices
+   - Select your SanDisk USB device
+   - Replace driver with WinUSB
+4. Launch Anchor
 
-## Database Schema
+### macOS Setup
+1. Download the latest macOS release
+2. Install the application
+3. Grant necessary permissions in System Preferences → Security & Privacy
+4. Launch Anchor (no additional setup required)
 
-```sql
-CREATE TABLE transcripts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    synced INTEGER NOT NULL DEFAULT 0
-);
+### Linux Setup
+1. Download the latest Linux release
+2. Extract and install the application
+3. Run the setup script:
+   ```bash
+   ./scripts/setup_linux.sh
+   ```
+4. Or manually create udev rule:
+   ```bash
+   echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="0x0781", MODE="0666"' | sudo tee /etc/udev/rules.d/99-anchor-sandisk.rules
+   sudo udevadm control --reload-rules
+   sudo udevadm trigger
+   ```
+5. Launch Anchor
+
+## 🎯 Usage
+
+### Getting Started
+1. **Insert SanDisk USB**: The application will automatically detect the device
+2. **Initialize Database**: Click "Initialize Database" to create your encrypted storage
+3. **Add Secure Data**: Enter and store your sensitive information
+4. **Remove USB**: The application locks immediately when USB is disconnected
+
+### Interface Overview
+
+#### Locked State
+- **Status**: Shows "Anchor - Locked" when no USB is detected
+- **Setup Instructions**: Platform-specific setup guidance
+- **Security Message**: Clear indication that database is inaccessible
+
+#### Unlocked State
+- **Dashboard**: Main interface when USB is connected
+- **Database Management**: Initialize and manage encrypted storage
+- **Data Entry**: Add and view secure information
+- **Session Info**: Real-time USB connection status
+
+### Data Management
+- **Add Data**: Type information and press Enter or click "Add"
+- **View Data**: Scroll through stored entries in reverse chronological order
+- **Auto-Save**: Data is automatically encrypted and saved
+
+## 🔧 Technical Architecture
+
+### Backend (Rust/Tauri)
+- **USB Detection**: nusb crate for cross-platform device enumeration
+- **Database**: rusqlite with device-specific encryption
+- **Concurrency**: tokio async runtime with 1-second polling interval
+- **State Management**: Thread-safe Arc<Mutex<AppState>> pattern
+
+### Frontend (React)
+- **Event System**: Tauri event listeners for hardware status
+- **State Management**: React hooks for UI state
+- **Responsive Design**: Tailwind CSS for cross-platform consistency
+- **TypeScript**: Full type safety throughout the application
+
+### Platform-Specific Implementation
+```rust
+// Conditional compilation for platform-specific code
+#[cfg(target_os = "windows")]
+fn check_windows_permissions() { /* Windows-specific logic */ }
+
+#[cfg(target_os = "macos")]
+fn check_macos_permissions() { /* macOS-specific logic */ }
+
+#[cfg(target_os = "linux")]
+fn generate_udev_rule() { /* Linux-specific logic */ }
 ```
 
-## Getting Started
+## 🔒 Security Model
 
-### Prerequisites
-- Rust 1.70+
-- Node.js 18+
-- npm or yarn
+### Threat Mitigation
+- **Physical Security**: Requires physical USB device for access
+- **Session Security**: Immediate lockout on USB removal
+- **Data Protection**: Encrypted database with device-specific keys
+- **No Credentials**: No passwords or tokens stored on disk
 
-### Installation
+### Security Flow
+1. **USB Detection**: Application polls for SanDisk devices every second
+2. **Authentication**: USB presence serves as authentication factor
+3. **Database Access**: SQLite connection only established when USB verified
+4. **Session Termination**: Database connection closed immediately on USB removal
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## 🐛 Troubleshooting
 
-### Development
+### Windows Issues
+- **Driver Problems**: Ensure WinUSB driver installed via Zadig
+- **Device Recognition**: Check Device Manager for proper driver
+- **Permission Issues**: Run application as Administrator for first-time setup
 
-1. Start the development server:
-   ```bash
-   npm run tauri dev
-   ```
+### Linux Issues
+- **USB Permissions**: Verify udev rule installation
+- **Device Access**: Check `/dev/bus/usb/*/*` permissions
+- **Detection**: Run `lsusb | grep 0781` to verify device detection
 
-2. The application will:
-   - Open the main window
-   - Start backend services
-   - Begin generating mock transcripts when Anchor is connected
+### macOS Issues
+- **Permissions**: Check System Preferences → Security & Privacy
+- **Device Recognition**: Verify USB device appears in System Information
+- **App Permissions**: Allow USB device access in security settings
 
-### Building
+### General Issues
+- **USB Not Detected**: Try different USB port or cable
+- **Database Errors**: Re-initialize database after USB reconnection
+- **App Crashes**: Check console logs for error messages
 
-1. Build for production:
-   ```bash
-   npm run build
-   ```
+## 📝 Development
 
-2. Create distributable:
-   ```bash
-   npm run tauri build
-   ```
-
-## Usage
-
-### Anchor Simulation
-1. Click "Connect Phone" in the sidebar to simulate Anchor device connection
-2. Mock transcripts will be generated every 10 seconds
-3. View Anchor status including battery level
-
-### Sync Management
-1. Toggle between online/offline modes
-2. Click "Sync Now" to mark all transcripts as synced
-3. View unsynced count in real-time
-
-### Transcript Management
-1. Click any transcript to view details
-2. Add manual transcripts with the form
-3. Mark individual transcripts as synced
-
-## Technical Details
-
-### Background Tasks
-- Runs every 10 seconds when Anchor is connected
-- Generates mock transcripts with realistic content
-- Updates Anchor status timestamps
-
-### State Management
-- React hooks for local state
-- Tauri commands for backend operations
-- Real-time polling every 5 seconds
-
-### Styling
-- Pure CSS, no frameworks
-- Modern, clean design
-- Responsive layout with sidebar
-
-## Deployment
-
-### CI/CD Pipeline
-
-**Automated builds** trigger on:
-- Push to `main` branch
-- New tags (`v1.0.0`, `v1.0.1`, etc.)
-- Pull requests
-
-**Pipeline stages:**
-1. **Test** - Run tests and code checks
-2. **Build** - Cross-platform packages
-3. **Deploy** - Store submissions
-
-### GitHub Releases (Recommended)
-
-1. **Tag a new release:**
-   ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-
-2. **Automatic builds** create installers:
-   - Windows (.msix, .msi, .exe)
-   - macOS (.dmg, .app)
-   - Linux (.deb, .AppImage, .snap)
-
-3. **Download installers** from GitHub Releases
-
-### App Store Deployment
-
-#### Microsoft Store
+### Building from Source
 ```bash
-# Build MSIX package
-npm run tauri build -- --target msix
+# Clone the repository
+git clone https://github.com/TheEleventhAvatar/Anchor.git
+cd Anchor
 
-# Submit to Microsoft Partner Center
-# Store submission required
+# Install dependencies
+npm install
+cd src-tauri && cargo fetch && cd ..
+
+# Development mode
+npm run tauri dev
+
+# Build for current platform
+npm run tauri build
 ```
 
-#### Mac App Store
-```bash
-# Build DMG with code signing
-npm run tauri build -- --target dmg
-
-# Submit to App Store Connect
-# Apple Developer account required
+### Project Structure
+```
+Anchor/
+├── src/                    # React frontend
+│   ├── components/          # React components
+│   ├── hooks/              # Custom React hooks
+│   ├── utils/              # Utility functions
+│   └── App.tsx            # Main application component
+├── src-tauri/             # Rust backend
+│   ├── src/                # Rust source code
+│   ├── capabilities/        # Tauri capabilities
+│   └── Cargo.toml         # Rust dependencies
+├── scripts/               # Setup scripts
+│   └── setup_linux.sh     # Linux udev setup
+└── public/               # Static assets
 ```
 
-#### Snap Store (Linux)
-```bash
-# Build snap package
-npm run tauri build -- --target snap
+### Dependencies
+- **Rust**: nusb, rusqlite, tokio, tauri, serde
+- **Node.js**: React, TypeScript, Tailwind CSS
+- **Build Tools**: Tauri CLI, Vite
 
-# Upload to Snap Store
-snapcraft upload --release=stable *.snap
-```
+## 📄 License
 
-### Local Deployment
+This project is proprietary software. See the [LICENSE](LICENSE) file for details.
 
-```bash
-# Windows
-.\scripts\deploy.ps1
+## 🤝 Contributing
 
-# macOS/Linux
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
-```
+Contributions are not accepted for this proprietary project. Please report issues through GitHub Issues for security considerations.
 
-### Auto-Updates
+## 📞 Support
 
-The app includes Tauri Updater for automatic updates when new releases are published.
+For support and security concerns:
+- **Issues**: [GitHub Issues](https://github.com/TheEleventhAvatar/Anchor/issues)
+- **Documentation**: [CROSS_PLATFORM_SETUP.md](CROSS_PLATFORM_SETUP.md)
+- **Releases**: [GitHub Releases](https://github.com/TheEleventhAvatar/Anchor/releases)
 
-### Environment Variables
+---
 
-For store deployments, set these secrets:
-- `SNAPCRAFT_LOGIN` - Snap Store credentials
-- `GITHUB_TOKEN` - GitHub API token
-
-## License
-
-MIT License - see LICENSE file for details
+**⚠️ Security Notice**: This application provides hardware-based security but should be used as part of a comprehensive security strategy. Always follow your organization's security policies and best practices.
