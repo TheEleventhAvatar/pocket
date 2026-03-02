@@ -36,36 +36,47 @@ function App() {
 
   useEffect(() => {
     const setupHardwareListener = async () => {
+      console.log("Setting up hardware listener...");
       const unlisten = await listen<HardwareStatusEvent>("hardware-status", (event) => {
+        console.log("Hardware status event received:", event);
         const { connected, serial_number } = event.payload;
         
         if (connected) {
+          console.log("USB Connected - Unlocking app. Serial:", serial_number);
           setIsUnlocked(true);
           setUsbSerial(serial_number || null);
           setDbInitialized(false);
           setSecureData([]);
           setVulnerabilities([]); // Clear threat intelligence on reconnect
-          console.log("USB Connected - Serial:", serial_number);
           // Check for existing database after a short delay
           setTimeout(() => checkExistingDatabase(), 500);
         } else {
+          console.log("USB Disconnected - Locking app");
           setIsUnlocked(false);
           setUsbSerial(null);
           setDbInitialized(false);
           setSecureData([]);
           setVulnerabilities([]); // Clear threat intelligence on disconnect
           setNewData("");
-          console.log("USB Disconnected - Session Wiped");
         }
         setError(null);
       });
 
       // Get platform-specific setup info
       try {
-        const info = await invoke<string>("setup_platform_permissions");
-        setPlatformInfo(info);
+        // Test with a different command first
+        const info = await invoke<string>("is_usb_connected");
+        setPlatformInfo(`USB connected: ${info}`);
+        console.log("Test command result:", info);
       } catch (err) {
-        console.log("Platform info:", err);
+        console.log("Test command error:", err);
+        try {
+          const info = await invoke<string>("setup_platform_permissions");
+          setPlatformInfo(info);
+          console.log("Platform info:", info);
+        } catch (err2) {
+          console.log("Platform info error:", err2);
+        }
       }
 
       return unlisten;
@@ -253,13 +264,7 @@ function App() {
             <div className="border-l-4 border-green-500 pl-4">
               <h3 className="font-semibold text-green-400">Linux Users</h3>
               <p className="text-sm text-gray-400 mt-1">
-                Run the setup script for USB permissions:
-              </p>
-              <p className="text-xs text-gray-500 font-mono bg-gray-900 p-2 rounded">
-                ./scripts/setup_linux.sh
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Or manually create udev rule:
+                if facing issues,manually create udev rule:
               </p>
               <p className="text-xs text-gray-500 font-mono bg-gray-900 p-2 rounded">
                 SUBSYSTEM=="usb", ATTR"{"idVendor"}"=="0x0781", TAG+="uaccess"
@@ -279,14 +284,6 @@ function App() {
         </div>
         
         <p className="text-gray-400 text-lg font-bold"><strong>Done? Please Insert Your SanDisk USB</strong></p>
-        
-        {platformInfo && (
-          <div className="bg-gray-800 rounded-lg p-3 max-w-md">
-            <p className="text-xs text-gray-500">
-              <span className="font-semibold">Platform Info:</span> {platformInfo}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

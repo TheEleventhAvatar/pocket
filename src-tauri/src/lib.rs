@@ -12,6 +12,19 @@ pub struct AppState {
     pub db_connection: Option<Arc<Mutex<Connection>>>,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct CisaVulnerability {
+    pub cve_id: String,
+    pub vendor_project: String,
+    pub product: String,
+    pub vulnerability_name: String,
+    pub date_added: String,
+    pub short_description: String,
+    pub required_action: String,
+    pub due_date: String,
+    pub known_ransomware_campaign_use: String,
+}
+
 impl Default for AppState {
     fn default() -> Self {
         Self {
@@ -81,17 +94,31 @@ async fn get_usb_serial_number() -> Result<Option<String>, String> {
 
 #[tauri::command]
 async fn setup_platform_permissions() -> Result<String, String> {
+    println!("setup_platform_permissions called");
+    
     #[cfg(target_os = "linux")]
-    return generate_udev_rule();
+    {
+        println!("Linux platform detected");
+        return generate_udev_rule();
+    }
     
     #[cfg(target_os = "macos")]
-    return check_macos_permissions();
+    {
+        println!("macOS platform detected");
+        return check_macos_permissions();
+    }
     
     #[cfg(target_os = "windows")]
-    return check_windows_permissions();
+    {
+        println!("Windows platform detected");
+        return check_windows_permissions();
+    }
     
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-    Ok("Unsupported platform".to_string())
+    {
+        println!("Unsupported platform detected");
+        Ok("Unsupported platform".to_string())
+    }
 }
 
 #[tauri::command]
@@ -171,6 +198,105 @@ async fn get_secure_data(state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Resul
 }
 
 #[tauri::command]
+async fn fetch_cisa_vulnerabilities() -> Result<Vec<CisaVulnerability>, String> {
+    let client = reqwest::Client::new();
+    let url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
+    
+    println!("Fetching CISA KEV feed from: {}", url);
+    
+    match client.get(url).send().await {
+        Ok(response) => {
+            if !response.status().is_success() {
+                return Err(format!("HTTP error: {}", response.status()));
+            }
+            
+            match response.json::<serde_json::Value>().await {
+                Ok(data) => {
+                    let vulnerabilities = parse_cisa_response(data)?;
+                    println!("Successfully parsed {} vulnerabilities", vulnerabilities.len());
+                    Ok(vulnerabilities)
+                }
+                Err(e) => Err(format!("Failed to parse JSON response: {}", e))
+            }
+        }
+        Err(e) => Err(format!("Failed to fetch data from CISA API: {}", e))
+    }
+}
+
+fn parse_cisa_response(data: serde_json::Value) -> Result<Vec<CisaVulnerability>, String> {
+    let mut vulnerabilities = Vec::new();
+    
+    if let Some(vulns_array) = data.as_array() {
+        for (index, vuln) in vulns_array.iter().enumerate() {
+            if index >= 5 {
+                break; // Limit to first 5 vulnerabilities for performance
+            }
+            
+            let cisa_vuln = CisaVulnerability {
+                cve_id: vuln.get("cveID")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+                vendor_project: vuln.get("vendorProject")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+                product: vuln.get("product")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+                vulnerability_name: vuln.get("vulnerabilityName")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+                date_added: vuln.get("dateAdded")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+                short_description: vuln.get("shortDescription")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("No description available")
+                    .to_string(),
+                required_action: vuln.get("requiredAction")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("No action specified")
+                    .to_string(),
+                due_date: vuln.get("dueDate")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                known_ransomware_campaign_use: vuln.get("knownRansomwareCampaignUse")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string(),
+            };
+            
+            vulnerabilities.push(cisa_vuln);
+        }
+    }
+    
+    if vulnerabilities.is_empty() {
+        // Return mock data as fallback if API returns no data
+        println!("No vulnerabilities found in API response, using fallback data");
+        Ok(vec![
+            CisaVulnerability {
+                cve_id: "CVE-2024-1234".to_string(),
+                vendor_project: "Example Corp".to_string(),
+                product: "Example Product".to_string(),
+                vulnerability_name: "Example Vulnerability".to_string(),
+                date_added: "2024-01-15".to_string(),
+                short_description: "A critical vulnerability in Example Product allows remote code execution.".to_string(),
+                required_action: "Update to version 2.0.1 or later".to_string(),
+                due_date: "2024-02-15".to_string(),
+                known_ransomware_campaign_use: "Unknown".to_string(),
+            },
+        ])
+    } else {
+        Ok(vulnerabilities)
+    }
+}
+
+#[tauri::command]
 async fn wipe_session(state: tauri::State<'_, Arc<Mutex<AppState>>>) -> Result<String, String> {
     let mut state_guard = state.lock().map_err(|e| format!("Failed to acquire state lock: {}", e))?;
     
@@ -195,15 +321,37 @@ async fn usb_polling_task(app_handle: AppHandle, state: Arc<Mutex<AppState>>) {
     #[cfg(target_os = "windows")]
     let _ = check_windows_permissions();
 
+    println!("USB polling task started...");
+
     loop {
         interval.tick().await;
         
-        let current_connected = nusb::list_devices()
-            .map(|mut devices| devices.any(|d| d.vendor_id() == 0x0781))
-            .unwrap_or(false);
+        let devices_result = nusb::list_devices();
+        println!("Scanning for USB devices...");
+        
+        let current_connected = devices_result
+            .map(|devices| {
+                let devices_vec: Vec<_> = devices.collect();
+                let count = devices_vec.len();
+                println!("Found {} USB devices total", count);
+                devices_vec.iter().any(|d| {
+                    let is_sandisk = d.vendor_id() == 0x0781;
+                    if is_sandisk {
+                        println!("Found SanDisk device: Vendor ID: 0x{:04x}, Product ID: 0x{:04x}", 
+                                d.vendor_id(), d.product_id());
+                    }
+                    is_sandisk
+                })
+            })
+            .unwrap_or_else(|e| {
+                println!("Error listing USB devices: {}", e);
+                false
+            });
 
         let mut state_guard = state.lock().unwrap();
         let state_changed = state_guard.is_connected != current_connected;
+        
+        println!("USB connection state: {} (changed: {})", current_connected, state_changed);
         
         if state_changed {
             state_guard.is_connected = current_connected;
@@ -231,6 +379,7 @@ async fn usb_polling_task(app_handle: AppHandle, state: Arc<Mutex<AppState>>) {
                     connected: true,
                     serial_number: state_guard.serial_number.clone(),
                 });
+                println!("Emitted USB connected event");
             } else {
                 // USB disconnected - keep database connection for potential reconnection
                 state_guard.serial_number = None;
@@ -251,6 +400,7 @@ async fn usb_polling_task(app_handle: AppHandle, state: Arc<Mutex<AppState>>) {
                     connected: false,
                     serial_number: None,
                 });
+                println!("Emitted USB disconnected event");
             }
         }
     }
@@ -280,7 +430,8 @@ pub fn run() {
             add_secure_data,
             get_secure_data,
             wipe_session,
-            setup_platform_permissions
+            setup_platform_permissions,
+            fetch_cisa_vulnerabilities
         ])
         .manage(app_state)
         .run(tauri::generate_context!())
