@@ -32,7 +32,6 @@ function App() {
   const [newData, setNewData] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [platformInfo, setPlatformInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const setupHardwareListener = async () => {
@@ -66,13 +65,11 @@ function App() {
       try {
         // Test with a different command first
         const info = await invoke<string>("is_usb_connected");
-        setPlatformInfo(`USB connected: ${info}`);
         console.log("Test command result:", info);
       } catch (err) {
         console.log("Test command error:", err);
         try {
           const info = await invoke<string>("setup_platform_permissions");
-          setPlatformInfo(info);
           console.log("Platform info:", info);
         } catch (err2) {
           console.log("Platform info error:", err2);
