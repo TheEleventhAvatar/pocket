@@ -53,17 +53,7 @@ Anchor is a cross-platform desktop application that provides hardware-based auth
 ### Linux Setup
 1. Download the latest Linux release
 2. Extract and install the application
-3. Run the setup script:
-   ```bash
-   ./scripts/setup_linux.sh
-   ```
-4. Or manually create udev rule:
-   ```bash
-   echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="0x0781", MODE="0666"' | sudo tee /etc/udev/rules.d/99-anchor-sandisk.rules
-   sudo udevadm control --reload-rules
-   sudo udevadm trigger
-   ```
-5. Launch Anchor
+3. Launch Anchor
 
 ## 🎯 Usage
 
